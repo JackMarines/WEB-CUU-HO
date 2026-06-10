@@ -1,0 +1,10 @@
+{
+  "mcp": {
+    "agentmemory": {
+      "type": "local",
+      "command": ["npx", "-y", "@agentmemory/mcp"],
+      "enabled": true
+    }
+  },
+  "plugin": [".opencode/agentmemory-capture.ts"]
+}

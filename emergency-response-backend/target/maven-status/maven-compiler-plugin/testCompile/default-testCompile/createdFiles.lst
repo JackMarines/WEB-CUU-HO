@@ -1,0 +1,5 @@
+com\emergency\controller\CallControllerTest.class
+com\emergency\service\CallServiceTest.class
+com\emergency\service\CenterServiceTest.class
+com\emergency\service\AiServiceTest.class
+com\emergency\service\DisasterTypeServiceTest.class
