@@ -1,0 +1,78 @@
+@import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
+
+@theme inline {
+  --color-surface-bg: #1E1E1E;
+  --color-surface-medium: #252525;
+  --color-surface-card: #2E2E2E;
+  --color-surface-elevated: #303030;
+  --color-surface-section: #3B3B3B;
+  --color-primary: #f86e64;
+  --color-primary-subtle: rgba(248, 110, 100, 0.15);
+  --color-text-primary: #F0F0F0;
+  --color-text-body: #E0E0E0;
+  --color-text-muted: #888888;
+  --color-text-subtle: rgba(255, 255, 255, 0.55);
+  --color-border-default: #3A3A3A;
+  --color-border-light: rgba(255, 255, 255, 0.06);
+  --color-status-high: #f86e64;
+  --color-status-medium: #FF8A50;
+  --color-status-low: #D4A84B;
+  --color-status-resolved: #66BB6A;
+  --color-supplies-text: #B39DDB;
+  --color-supplies-bg: #2A2540;
+
+  --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+
+  --radius-tag: 4px;
+  --radius-pill: 8px;
+  --radius-card: 10px;
+  --radius-section: 12px;
+  --radius-container: 16px;
+  --radius-full: 9999px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  height: 100%;
+}
+
+body {
+  height: 100%;
+  margin: 0;
+  background: var(--color-surface-bg);
+  color: var(--color-text-body);
+  font-family: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  font-size: 13px;
+  line-height: 1.4;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: var(--color-text-primary);
+  font-weight: 600;
+  text-wrap: balance;
+}
+
+a {
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-default);
+  border-radius: var(--radius-tag);
+}

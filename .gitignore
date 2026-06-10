@@ -1,0 +1,36 @@
+# Frontend
+emergency-response-frontend/node_modules
+emergency-response-frontend/.next/
+emergency-response-frontend/out/
+emergency-response-frontend/build
+emergency-response-frontend/.vercel
+emergency-response-frontend/*.tsbuildinfo
+emergency-response-frontend/next-env.d.ts
+
+# Backend
+emergency-response-backend/target/
+emergency-response-backend/*.jar
+emergency-response-backend/uploads/
+
+# Environment
+.env*
+!.env.example
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Tooling
+.codegraph/
+.opencode/
+.impeccable/
+
+# Debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
