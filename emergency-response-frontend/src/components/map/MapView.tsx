@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
+import MapErrorBoundary from './MapErrorBoundary';
 
 interface Props {
   center?: [number, number];
@@ -44,26 +45,28 @@ export default function MapView({
 
   return (
     <div className="relative h-full">
-      <MapContainer
-        center={center}
-        zoom={zoom}
-        className={className}
-        zoomControl={false}
-        attributionControl={false}
-        minZoom={5}
-        maxBounds={L.latLngBounds([5.0, 100.0], [25.0, 112.0])}
-        maxBoundsViscosity={1.0}
-        style={{ background: '#e8e8e8' }}
-      >
-        <TileLayer
-          attribution=""
-          noWrap={true}
-          url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-        />
-        <MapClickHandler onClick={onClick} />
-        <MapCenterController center={center} zoom={zoom} />
-        {children}
-      </MapContainer>
+      <MapErrorBoundary>
+        <MapContainer
+          center={center}
+          zoom={zoom}
+          className={className}
+          zoomControl={false}
+          attributionControl={false}
+          minZoom={5}
+          maxBounds={L.latLngBounds([5.0, 100.0], [25.0, 112.0])}
+          maxBoundsViscosity={1.0}
+          style={{ background: '#e8e8e8' }}
+        >
+          <TileLayer
+            attribution=""
+            noWrap={true}
+            url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+          />
+          <MapClickHandler onClick={onClick} />
+          <MapCenterController center={center} zoom={zoom} />
+          {children}
+        </MapContainer>
+      </MapErrorBoundary>
       <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-[1000]">
         <div className="px-3 py-1.5 rounded-pill text-xs text-white"
              style={{ background: 'rgba(0,0,0,0.7)' }}>

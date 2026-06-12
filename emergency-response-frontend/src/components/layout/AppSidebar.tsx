@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Map, Send, Building2, MessageSquare, Settings, Shield, LogIn, LogOut } from 'lucide-react';
+import { Home, Map, Send, Building2, MessageSquare, Settings, Shield, LogIn, LogOut } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface NavItem {
@@ -14,7 +14,8 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { href: '/', label: 'Bản đồ', icon: Map },
+  { href: '/home', label: 'Trang chủ', icon: Home },
+  { href: '/map', label: 'Bản đồ', icon: Map },
   { href: '/submit', label: 'Gửi yêu cầu', icon: Send },
   { href: '/centers', label: 'Trung tâm', icon: Building2 },
   { href: '/calls/mine', label: 'Yêu cầu của tôi', icon: MessageSquare, auth: true },

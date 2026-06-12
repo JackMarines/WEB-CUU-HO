@@ -12,6 +12,16 @@ function CallbackContent() {
   const [error, setError] = useState('');
 
   useEffect(() => {
+    const errorParam = searchParams.get('error');
+    if (errorParam) {
+      if (errorParam === 'not_whitelisted') {
+        setError('Tài khoản của bạn chưa được cấp quyền truy cập. Vui lòng liên hệ quản trị viên.');
+      } else {
+        setError('Đăng nhập thất bại');
+      }
+      return;
+    }
+
     const token = searchParams.get('token');
     if (token) {
       localStorage.setItem('token', token);
@@ -20,7 +30,7 @@ function CallbackContent() {
         .then((user) => {
           localStorage.setItem('user', JSON.stringify(user));
           setUser(user);
-          router.push('/');
+          router.push('/map');
         })
         .catch(() => {
           setError('Đăng nhập thất bại');

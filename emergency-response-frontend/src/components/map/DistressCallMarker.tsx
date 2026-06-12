@@ -23,10 +23,13 @@ function getRelativeTime(dateStr: string): string {
   return `${days} ngày trước`;
 }
 
-function createMarkerIcon(color: string, score: number) {
+function createMarkerIcon(color: string, score: number, status: string) {
+  const shouldPulse = status !== 'resolved' && status !== 'dismissed' && score >= 60;
+  const dot = `<div style="background:${color};width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.3);border:2px solid #fff;position:relative;z-index:1;">${score}</div>`;
+  const ring = shouldPulse ? '<div class="marker-pulse-ring"></div>' : '';
   return L.divIcon({
     className: '',
-    html: `<div style="background:${color};width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.3);border:2px solid #fff;">${score}</div>`,
+    html: `<div style="position:relative;width:32px;height:32px;">${ring}${dot}</div>`,
     iconSize: [32, 32],
     iconAnchor: [16, 16],
   });
@@ -42,7 +45,7 @@ const statusLabels: Record<string, string> = {
 export default function DistressCallMarker({ call }: { call: DistressCall }) {
   const color = getUrgencyColor(call);
   return (
-    <Marker position={[call.lat, call.lng]} icon={createMarkerIcon(color, call.urgencyScore)}>
+    <Marker position={[call.lat, call.lng]} icon={createMarkerIcon(color, call.urgencyScore, call.status)}>
       <Popup>
         <div className="font-sans text-sm min-w-[220px]">
           <div className="flex items-center justify-between mb-1.5">
@@ -51,15 +54,15 @@ export default function DistressCallMarker({ call }: { call: DistressCall }) {
               <span className="font-semibold text-text-primary text-sm">{call.disasterType.name}</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className={`px-2 py-0.5 rounded-tag text-[10px] font-semibold ${
+              <span className={`px-2 py-0.5 rounded-tag text-[10px] font-semibold transition-all duration-200 ease-out ${
                 call.urgencyScore >= 80 ? 'bg-primary-subtle text-status-high' :
                 call.urgencyScore >= 60 ? 'bg-[rgba(255,138,80,0.15)] text-status-medium' :
                 'bg-[rgba(212,168,75,0.15)] text-status-low'
               }`}>{call.urgencyScore}</span>
-              <span className={`px-2 py-0.5 rounded-tag text-[10px] font-semibold uppercase tracking-wider ${
+              <span className={`px-2 py-0.5 rounded-tag text-[10px] font-semibold uppercase tracking-wider transition-all duration-200 ease-out ${
                 call.status === 'active' ? 'bg-primary-subtle text-status-high' :
                 call.status === 'in_progress' ? 'bg-[rgba(255,138,80,0.15)] text-status-medium' :
-                call.status === 'resolved' ? 'bg-[rgba(76,175,80,0.15)] text-[#66BB6A]' :
+                call.status === 'resolved' ? 'bg-[rgba(76,175,80,0.15)] text-status-resolved' :
                 'bg-[rgba(255,255,255,0.08)] text-text-muted'
               }`}>{statusLabels[call.status]}</span>
             </div>
@@ -69,11 +72,11 @@ export default function DistressCallMarker({ call }: { call: DistressCall }) {
             <span className="flex items-center gap-0.5"><Clock size={12} />{getRelativeTime(call.createdAt)}</span>
           </div>
           <div className="text-text-muted text-[11px] mb-1.5">
-            <span className="flex items-center gap-0.5"><MapPin size={15} />{call.locationName || `${call.lat.toFixed(2)}, ${call.lng.toFixed(2)}`}</span>
+            <span className="flex items-center gap-0.5"><MapPin size={12} /><span className="truncate max-w-[200px]">{call.locationName || `${call.lat.toFixed(2)}, ${call.lng.toFixed(2)}`}</span></span>
           </div>
 
           <div className="flex items-center gap-1.5 mb-2">
-            <Users size={14} className="text-status-high" />
+            <Users size={12} className="text-status-high" />
             <span className="text-xs font-semibold text-text-primary">{call.personCount} người cần cứu trợ</span>
           </div>
 

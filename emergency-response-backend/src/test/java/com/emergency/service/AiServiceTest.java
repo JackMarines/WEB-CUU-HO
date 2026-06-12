@@ -22,6 +22,7 @@ import org.springframework.http.*;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -55,10 +56,11 @@ class AiServiceTest {
 
     @BeforeEach
     void setUp() {
+        var objectMapper = new ObjectMapper();
         aiService = new AiService(restTemplate, API_KEY, MODEL,
-            callRepository, disasterTypeRepository, centerRepository);
+            callRepository, disasterTypeRepository, centerRepository, objectMapper);
         fallbackAiService = new AiService(restTemplate, "", MODEL,
-            callRepository, disasterTypeRepository, centerRepository);
+            callRepository, disasterTypeRepository, centerRepository, objectMapper);
 
         emptyHistory = List.of();
 
@@ -157,14 +159,13 @@ class AiServiceTest {
     }
 
     @Test
-    void geminiRespond_ApiError_ReturnsErrorMessage() {
+    void geminiRespond_ApiError_FallsBackToRuleBased() {
         when(restTemplate.exchange(anyString(), eq(HttpMethod.POST), any(), eq(Map.class)))
             .thenThrow(new RestClientException("Connection refused"));
 
         ChatResponse response = aiService.respond("test", null, emptyHistory);
 
-        assertThat(response.reply()).contains("Xin lỗi");
-        assertThat(response.reply()).contains("kết nối");
+        assertThat(response.reply()).contains("Tôi không tìm thấy");
     }
 
     @Test

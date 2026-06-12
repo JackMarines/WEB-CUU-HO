@@ -21,4 +21,10 @@ public class AiController {
         ChatResponse response = aiService.respond(request.message(), request.callId(), request.history());
         return ResponseEntity.ok(response);
     }
+
+    @PostMapping("/public")
+    public ResponseEntity<ChatResponse> chatPublic(@RequestBody ChatRequest request) {
+        ChatResponse response = aiService.respondPublic(request.message(), request.history());
+        return ResponseEntity.ok(response);
+    }
 }

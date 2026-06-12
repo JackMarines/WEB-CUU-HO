@@ -256,7 +256,34 @@ export default function AdminCentersPage() {
       ) : centers.length === 0 ? (
         <p className="text-text-muted">Không tìm thấy trung tâm cứu hộ nào.</p>
       ) : (
-        <div className="overflow-x-auto rounded-section border border-border-default">
+        <><div className="sm:hidden space-y-3">
+          {centers.map(c => (
+            <div key={c.id} className="rounded-section border border-border-default bg-surface-elevated p-4">
+              <div className="flex items-center justify-between mb-1">
+                <h3 className="text-text-body font-medium text-sm">{c.name}</h3>
+                <div className="flex gap-2">
+                  <button onClick={() => openEdit(c)} className="text-text-muted hover:text-text-body transition-colors cursor-pointer min-w-[44px] min-h-[44px] flex items-center justify-center" title="Sửa">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                  </button>
+                  <button onClick={() => setDeleteTarget(c)} className="text-text-muted hover:text-status-high transition-colors cursor-pointer min-w-[44px] min-h-[44px] flex items-center justify-center" title="Xóa">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                  </button>
+                </div>
+              </div>
+              <span className={`inline-block px-2 py-0.5 rounded-tag text-xs font-medium mb-2 ${
+                c.type === 'rescue_team' ? 'bg-primary-subtle text-status-high' :
+                c.type === 'supply_distribution' ? 'bg-[rgba(255,138,80,0.15)] text-status-medium' :
+                'bg-surface-card text-text-muted'
+              }`}>
+                {typeLabels[c.type]}
+              </span>
+              <p className="text-text-muted text-xs">{c.address}</p>
+              <p className="text-text-muted text-xs mt-0.5">{c.phone}</p>
+              <p className="text-text-body text-xs mt-0.5">Sức chứa: {c.capacity ?? '—'}</p>
+            </div>
+          ))}
+        </div>
+        <div className="hidden sm:block overflow-x-auto rounded-section border border-border-default">
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-surface-section text-text-muted uppercase text-xs tracking-wider">
@@ -297,11 +324,12 @@ export default function AdminCentersPage() {
             </tbody>
           </table>
         </div>
+        </>
       )}
 
       {modal.open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-          <div className="bg-surface-elevated rounded-section p-6 w-full max-w-lg border border-border-default max-h-[90vh] overflow-y-auto">
+          <div className="bg-surface-elevated rounded-section p-4 sm:p-6 w-full max-w-lg border border-border-default max-h-[90vh] overflow-y-auto">
             <h2 className="text-lg font-bold text-text-primary mb-4">
               {modal.edit ? 'Chỉnh sửa trung tâm' : 'Thêm trung tâm cứu hộ'}
             </h2>
@@ -417,7 +445,7 @@ export default function AdminCentersPage() {
 
       {deleteTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-          <div className="bg-surface-elevated rounded-section p-6 w-full max-w-sm border border-border-default">
+          <div className="bg-surface-elevated rounded-section p-4 sm:p-6 w-full max-w-sm border border-border-default">
             <h2 className="text-lg font-bold text-text-primary mb-2">Xóa trung tâm</h2>
             <p className="text-text-muted text-sm mb-1">Bạn có chắc muốn xóa</p>
             <p className="text-text-body font-medium mb-4">&ldquo;{deleteTarget.name}&rdquo;?</p>

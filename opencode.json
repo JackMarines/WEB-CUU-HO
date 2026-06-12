@@ -4,6 +4,11 @@
       "type": "local",
       "command": ["npx", "-y", "@agentmemory/mcp"],
       "enabled": true
+    },
+    "vercel": {
+      "type": "remote",
+      "url": "https://mcp.vercel.com",
+      "enabled": true
     }
   },
   "plugin": [".opencode/agentmemory-capture.ts"]

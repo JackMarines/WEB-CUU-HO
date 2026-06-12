@@ -78,7 +78,7 @@ export default function CallsPage() {
           value={searchQuery}
           onChange={e => setSearchQuery(e.target.value)}
           placeholder="Tìm kiếm người dùng, địa điểm..."
-          className="px-3 py-2 rounded-pill bg-surface-card border border-border-default text-text-body text-sm placeholder-text-muted focus:outline-none focus:border-primary transition-colors min-w-[220px]"
+          className="px-3 py-2 rounded-pill bg-surface-card border border-border-default text-text-body text-sm placeholder-text-muted focus:outline-none focus:border-primary transition-colors w-full sm:min-w-[220px]"
         />
         <input
           type="date"
@@ -119,7 +119,37 @@ export default function CallsPage() {
       ) : calls.length === 0 ? (
         <p className="text-text-muted">Không tìm thấy cuộc gọi nào.</p>
       ) : (
-        <div className="overflow-x-auto rounded-section border border-border-default">
+        <><div className="sm:hidden space-y-3">
+          {calls.map((call, i) => (
+            <div
+              key={call.id}
+              onClick={() => router.push(`/admin/calls/${call.id}`)}
+              className="call-card-enter rounded-section border border-border-default bg-surface-elevated p-4 hover:border-[#555] transition-colors cursor-pointer"
+              style={{ animationDelay: `${i * 60}ms` }}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-text-body font-medium text-sm">{call.userName}</span>
+                <span className={`px-2 py-0.5 rounded-tag text-xs font-medium ${getUrgencyClass(call.urgencyScore)}`}>
+                  {call.urgencyScore}
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <span className="text-lg">{call.disasterType.icon}</span>
+                <span className="text-text-body text-sm">{call.disasterType.name}</span>
+                <span className={`ml-auto px-2 py-0.5 rounded-tag text-xs font-medium ${getStatusClass(call.status)}`}>
+                  {statusLabels[call.status] || call.status}
+                </span>
+              </div>
+              <p className="text-text-muted text-xs truncate">
+                {call.locationName || `${call.lat.toFixed(4)}, ${call.lng.toFixed(4)}`}
+              </p>
+              <p className="text-text-subtle text-[10px] mt-1">
+                {new Date(call.createdAt).toLocaleString()}
+              </p>
+            </div>
+          ))}
+        </div>
+        <div className="hidden sm:block overflow-x-auto rounded-section border border-border-default">
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-surface-section text-text-muted uppercase text-xs tracking-wider">
@@ -132,11 +162,12 @@ export default function CallsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border-default">
-              {calls.map((call) => (
+              {calls.map((call, i) => (
                 <tr
                   key={call.id}
                   onClick={() => router.push(`/admin/calls/${call.id}`)}
-                  className="hover:bg-surface-card transition-colors cursor-pointer"
+                  className="call-card-enter hover:bg-surface-card transition-colors cursor-pointer"
+                  style={{ animationDelay: `${i * 60}ms` }}
                 >
                   <td className="px-4 py-3 text-text-body font-medium">{call.userName}</td>
                   <td className="px-4 py-3">
@@ -164,6 +195,7 @@ export default function CallsPage() {
             </tbody>
           </table>
         </div>
+        </>
       )}
     </div>
   );

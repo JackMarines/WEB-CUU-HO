@@ -11,6 +11,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
@@ -28,6 +29,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
     private String redirectUri;
 
     @Override
+    @Transactional
     public void onAuthenticationSuccess(HttpServletRequest request,
                                         HttpServletResponse response,
                                         Authentication authentication) throws IOException, ServletException {
@@ -45,17 +47,29 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
             ? oAuth2User.getAttribute("picture")
             : oAuth2User.getAttribute("avatar_url");
 
-        User user = userRepository.findByProviderAndProviderId(provider, providerId)
-            .orElseGet(() -> {
-                User newUser = new User();
-                newUser.setName(name);
-                newUser.setEmail(email);
-                newUser.setProvider(provider);
-                newUser.setProviderId(providerId);
-                newUser.setAvatarUrl(avatarUrl);
-                newUser.setRole(User.Role.user);
-                return userRepository.save(newUser);
-            });
+        // 1. Check by OAuth identity (existing OAuth user)
+        User user = userRepository.findByProviderAndProviderId(provider, providerId).orElse(null);
+
+        if (user == null) {
+            // 2. Not found by OAuth — check by email (pre-created by admin)
+            user = userRepository.findByEmail(email).orElse(null);
+
+            if (user == null) {
+                // 3. Email not in system at all — reject (whitelist only)
+                String targetUrl = UriComponentsBuilder.fromUriString(redirectUri)
+                    .queryParam("error", "not_whitelisted")
+                    .build().toUriString();
+                getRedirectStrategy().sendRedirect(request, response, targetUrl);
+                return;
+            }
+
+            // Link OAuth to existing pre-created account
+            user.setProvider(provider);
+            user.setProviderId(providerId);
+            user.setAvatarUrl(avatarUrl);
+            if (name != null) user.setName(name);
+            userRepository.save(user);
+        }
 
         String token = jwtTokenProvider.generateToken(user);
 

@@ -2,7 +2,12 @@
 
 import { useState } from 'react';
 
-const QUICK_ACTIONS = [
+interface QuickAction {
+  label: string;
+  query: string;
+}
+
+const DEFAULT_ACTIONS: QuickAction[] = [
   { label: 'Vật tư cho lũ lụt', query: 'vật tư cho lũ lụt' },
   { label: 'Thông tin cuộc gọi', query: 'thông tin cuộc gọi' },
   { label: 'Trung tâm gần đây', query: 'trung tâm cứu hộ gần đây' },
@@ -11,9 +16,11 @@ const QUICK_ACTIONS = [
 interface Props {
   onSend: (message: string) => void;
   disabled: boolean;
+  quickActions?: QuickAction[];
 }
 
-export default function ChatInput({ onSend, disabled }: Props) {
+export default function ChatInput({ onSend, disabled, quickActions }: Props) {
+  const actions = quickActions ?? DEFAULT_ACTIONS;
   const [input, setInput] = useState('');
 
   function handleSubmit(e: React.FormEvent) {
@@ -27,7 +34,7 @@ export default function ChatInput({ onSend, disabled }: Props) {
   return (
     <div className="border-t border-border-default px-4 py-3 space-y-2">
       <div className="flex flex-wrap gap-1.5">
-        {QUICK_ACTIONS.map((a) => (
+        {actions.map((a) => (
           <button
             key={a.query}
             type="button"

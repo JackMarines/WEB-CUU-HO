@@ -81,7 +81,42 @@ export default function AdminUsersPage() {
 
       {error && <p className="text-status-high text-sm mb-4">{error}</p>}
 
-      <div className="rounded-section border border-border-default bg-surface-elevated overflow-hidden">
+      <><div className="sm:hidden space-y-3">
+        {users.map(u => (
+          <div key={u.id} className={`rounded-section border border-border-default bg-surface-elevated p-4 ${currentUser?.id === u.id ? 'border-primary' : ''}`}>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-text-body font-medium text-sm">{u.name}{currentUser?.id === u.id && <span className="text-xs text-text-muted ml-1">(bạn)</span>}</span>
+              <button
+                onClick={() => setDeleteTarget(u)}
+                disabled={!canDelete(u)}
+                className={`text-xs px-2.5 py-1 rounded-pill transition-colors cursor-pointer min-w-[44px] min-h-[44px] flex items-center justify-center ${
+                  canDelete(u)
+                    ? 'bg-[rgba(248,110,100,0.15)] text-status-high'
+                    : 'bg-surface-card text-text-subtle opacity-40 cursor-not-allowed'
+                }`}
+              >
+                Xóa
+              </button>
+            </div>
+            <p className="text-text-muted text-xs mb-1">{u.email}</p>
+            <div className="flex items-center gap-2">
+              <span className={`px-2 py-0.5 rounded-tag text-xs font-medium ${
+                u.role === 'superadmin' ? 'bg-[rgba(179,157,219,0.15)] text-[#B39DDB]' :
+                u.role === 'admin' ? 'bg-primary-subtle text-status-high' :
+                'bg-surface-card text-text-muted'
+              }`}>
+                {u.role}
+              </span>
+              <span className={`px-2 py-0.5 rounded-tag text-xs font-medium ${u.isActive ? 'bg-[rgba(76,175,80,0.15)] text-[#4CAF50]' : 'bg-[rgba(248,110,100,0.15)] text-status-high'}`}>
+                {u.isActive ? 'Hoạt động' : 'Bị cấm'}
+              </span>
+              <span className="text-text-subtle text-[10px] ml-auto">{new Date(u.createdAt).toLocaleDateString()}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+      {/* Desktop table */}
+      <div className="hidden sm:block rounded-section border border-border-default bg-surface-elevated overflow-hidden">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border-default text-text-muted text-xs uppercase tracking-wider">
@@ -136,10 +171,11 @@ export default function AdminUsersPage() {
           </tbody>
         </table>
       </div>
+      </>
 
       {showCreate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-          <div className="bg-surface-elevated rounded-section p-6 w-full max-w-md border border-border-default">
+          <div className="bg-surface-elevated rounded-section p-4 sm:p-6 w-full max-w-md border border-border-default">
             <h2 className="text-lg font-bold text-text-primary mb-4">Tạo tài khoản Admin</h2>
             {error && <p className="text-status-high text-sm mb-3">{error}</p>}
             <form onSubmit={handleCreate} className="space-y-4">
@@ -196,7 +232,7 @@ export default function AdminUsersPage() {
 
       {deleteTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-          <div className="bg-surface-elevated rounded-section p-6 w-full max-w-sm border border-border-default">
+          <div className="bg-surface-elevated rounded-section p-4 sm:p-6 w-full max-w-sm border border-border-default">
             <h2 className="text-lg font-bold text-text-primary mb-2">Xóa người dùng</h2>
             <p className="text-text-muted text-sm mb-1">Bạn có chắc muốn xóa</p>
             <p className="text-text-body font-medium mb-4">&ldquo;{deleteTarget.name}&rdquo;?</p>

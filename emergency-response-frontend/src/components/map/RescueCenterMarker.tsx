@@ -33,8 +33,8 @@ export default function RescueCenterMarker({ center }: { center: RescueCenter })
         <div className="font-sans text-sm">
           <h3 className="font-bold text-text-primary text-base">{center.name}</h3>
           <p className="text-text-body text-xs">{typeIcons[center.type]}{typeLabels[center.type]}</p>
-          <p className="text-text-body mt-1">{center.address}</p>
-          <p className="text-text-body"><Phone className="inline mr-1" size={13} />{center.phone}</p>
+          <p className="text-text-body mt-1 truncate max-w-[220px]">{center.address}</p>
+          <p className="flex items-center gap-1 text-text-body"><Phone size={12} />{center.phone}</p>
         </div>
       </Popup>
     </Marker>

@@ -17,7 +17,7 @@ export default function ForgotPasswordPage() {
     setLoading(true);
     try {
       const res = await authService.forgotPassword(email);
-      setMessage(res.message + (res.token ? ` (Dev token: ${res.token})` : ''));
+      setMessage(res.message);
     } catch (err: any) {
       setError(err.response?.data?.error || 'Gửi yêu cầu thất bại');
     } finally {

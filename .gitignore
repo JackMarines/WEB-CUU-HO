@@ -15,6 +15,7 @@ emergency-response-backend/uploads/
 # Environment
 .env*
 !.env.example
+**/application.properties
 
 # OS
 .DS_Store

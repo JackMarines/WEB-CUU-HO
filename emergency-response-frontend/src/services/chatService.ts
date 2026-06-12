@@ -10,4 +10,12 @@ export const chatService = {
     const res = await api.post<ChatResponse>('/chat', { message, callId, history });
     return res.data;
   },
+
+  sendPublicMessage: async (
+    message: string,
+    history?: ChatMessage[]
+  ): Promise<ChatResponse> => {
+    const res = await api.post<ChatResponse>('/chat/public', { message, history });
+    return res.data;
+  },
 };

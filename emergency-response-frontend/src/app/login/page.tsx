@@ -16,7 +16,7 @@ export default function LoginPage() {
   const [showAdminForm, setShowAdminForm] = useState(false);
 
   useEffect(() => {
-    if (user) router.push('/');
+    if (user) router.push('/map');
   }, [user, router]);
 
   if (user) return null;
@@ -32,7 +32,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="max-w-md mx-auto mt-20 p-8 rounded-lg surface-elevated shadow-lg">
+    <div className="max-w-md mx-auto mt-6 sm:mt-20 p-6 sm:p-8 rounded-lg surface-elevated shadow-lg">
       <h1 className="text-2xl font-bold text-center mb-2 text-text-primary">
         Cứu Trợ Khẩn Cấp
       </h1>
@@ -72,7 +72,7 @@ export default function LoginPage() {
         onClick={() => setShowAdminForm(!showAdminForm)}
         className="text-sm text-primary hover:underline mb-4 block mx-auto"
       >
-        {showAdminForm ? 'Ẩn đăng nhập admin' : 'Đăng nhập admin (local)'}
+        {showAdminForm ? 'Ẩn đăng nhập' : 'Đăng nhập'}
       </button>
 
       {showAdminForm && (
@@ -101,7 +101,7 @@ export default function LoginPage() {
             type="submit"
             className="w-full bg-status-high text-surface-bg p-3 rounded-lg font-medium hover:opacity-90 transition-opacity"
           >
-            Đăng nhập Admin
+            Đăng nhập
           </button>
         </form>
       )}

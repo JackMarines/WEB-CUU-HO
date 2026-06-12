@@ -80,7 +80,7 @@ export default function CallDetailPage() {
       setSelectedCenter('');
       setAssignNote('');
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Assignment failed');
+      setError(err.response?.data?.error || 'Phân công thất bại');
     } finally {
       setSaving(false);
     }

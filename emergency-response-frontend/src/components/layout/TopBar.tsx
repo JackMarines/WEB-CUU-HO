@@ -8,7 +8,7 @@ export default function TopBar() {
       <span className="text-primary font-semibold tracking-wider text-xs uppercase flex items-center gap-1.5">
         <Shield size={13} />Cứu Trợ Khẩn Cấp
       </span>
-      <span className="text-text-subtle text-[11px] tracking-wide">
+      <span className="hidden sm:inline text-text-subtle text-[11px] tracking-wide">
         Emergency Response Platform
       </span>
     </div>

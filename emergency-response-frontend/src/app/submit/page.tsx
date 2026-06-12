@@ -54,7 +54,7 @@ export default function SubmitCallPage() {
   useEffect(() => {
     disasterTypeService.getAll()
       .then(setDisasterTypes)
-      .catch(() => setError('Failed to load disaster types'));
+      .catch(() => setError('Không thể tải danh sách loại thiên tai'));
   }, []);
 
   useEffect(() => {
@@ -212,7 +212,7 @@ export default function SubmitCallPage() {
       });
       router.push('/');
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to submit call');
+      setError(err.response?.data?.error || 'Không thể gửi yêu cầu');
     } finally {
       setSaving(false);
     }
@@ -261,7 +261,7 @@ export default function SubmitCallPage() {
               disabled={geoLoading}
               className="px-3 py-2 rounded-pill bg-surface-card border border-border-default text-text-body text-sm hover:border-primary transition-colors disabled:opacity-50 cursor-pointer whitespace-nowrap"
             >
-              {geoLoading ? '...' : <><MapPin className="inline mr-1" size={16} />Vị trí hiện tại</>}
+              {geoLoading ? '...' : <><MapPin className="inline mr-1" size={14} /><span className="max-[380px]:text-[11px]">Vị trí hiện tại</span></>}
             </button>
           </div>
           {showResults && (
@@ -284,7 +284,7 @@ export default function SubmitCallPage() {
           )}
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-xs text-text-muted mb-1.5 font-semibold uppercase tracking-wider">
               Họ tên
