@@ -37,6 +37,7 @@ yarn-debug.log*
 yarn-error.log*
 
 # Root-level dev/config files
+DOCUMENT/
 .next/
 AGENTS.md
 DESIGN.md
