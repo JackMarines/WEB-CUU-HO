@@ -35,3 +35,11 @@ Thumbs.db
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Root-level dev/config files
+.next/
+AGENTS.md
+DESIGN.md
+PRODUCT.md
+jack_ai_context.md
+opencode.json
