@@ -41,24 +41,27 @@ export default function MapPage() {
         ))}
       </MapView>
 
-      <div className="absolute bottom-4 left-4 right-4 mx-auto max-w-[180px] z-[1000] flex flex-col gap-1.5">
-        <div className="rounded-pill px-3 py-2 text-[11px] leading-tight"
+      <div className="absolute top-4 right-4 z-[1000]">
+        <div className="rounded-pill px-3 py-1.5 text-[11px] leading-tight"
              style={{ background: 'rgba(0,0,0,0.75)' }}>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="inline-block w-3 h-3 rounded-full bg-[#f86e64] border border-white" />
-            <span className="text-white">80-100: Nguy cấp</span>
+          <div className="flex items-center gap-1.5 mb-0.5">
+            <span className="inline-block w-2 h-2 rounded-full bg-[#f86e64]" />
+            <span className="text-white/90">Nguy cấp</span>
+            <span className="text-white/50 ml-auto">80-100</span>
           </div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="inline-block w-3 h-3 rounded-full bg-[#FF8A50] border border-white" />
-            <span className="text-white">60-79: Cao</span>
+          <div className="flex items-center gap-1.5 mb-0.5">
+            <span className="inline-block w-2 h-2 rounded-full bg-[#FF8A50]" />
+            <span className="text-white/90">Cao</span>
+            <span className="text-white/50 ml-auto">60-79</span>
           </div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="inline-block w-3 h-3 rounded-full bg-[#D4A84B] border border-white" />
-            <span className="text-white">0-59: Trung bình</span>
+          <div className="flex items-center gap-1.5 mb-0.5">
+            <span className="inline-block w-2 h-2 rounded-full bg-[#D4A84B]" />
+            <span className="text-white/90">Trung bình</span>
+            <span className="text-white/50 ml-auto">0-59</span>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="inline-block w-3 h-3 rounded-full bg-[#66BB6A] border border-white" />
-            <span className="text-white">Đã xử lý</span>
+          <div className="flex items-center gap-1.5">
+            <span className="inline-block w-2 h-2 rounded-full bg-[#66BB6A]" />
+            <span className="text-white/90">Đã xử lý</span>
           </div>
         </div>
       </div>

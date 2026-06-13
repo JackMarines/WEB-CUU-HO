@@ -46,7 +46,7 @@ class AiServiceTest {
     @Captor private ArgumentCaptor<HttpEntity<Map<String, Object>>> requestCaptor;
 
     private static final String API_KEY = "test-key";
-    private static final String MODEL = "openrouter/free";
+    private static final String MODEL = "gemini-2.0-flash";
     private AiService aiService;
     private AiService fallbackAiService;
     private DisasterType floodType;
@@ -95,14 +95,16 @@ class AiServiceTest {
     }
 
     @Test
-    void openrouterRespond_SendsCorrectRequest() {
+    void geminiRespond_SendsCorrectRequest() {
         Map<String, Object> mockResponse = Map.of(
-            "choices", List.of(Map.of(
-                "message", Map.of("content", "Xin chào, tôi có thể giúp gì?")
+            "candidates", List.of(Map.of(
+                "content", Map.of(
+                    "parts", List.of(Map.of("text", "Xin chào, tôi có thể giúp gì?"))
+                )
             ))
         );
         when(restTemplate.exchange(
-            contains("openrouter.ai"),
+            contains("generativelanguage.googleapis.com"),
             eq(HttpMethod.POST),
             any(),
             eq(Map.class)
@@ -115,7 +117,7 @@ class AiServiceTest {
         ChatResponse response = aiService.respond("cần vật tư gì?", null, history);
 
         verify(restTemplate).exchange(
-            contains("openrouter.ai"),
+            contains("generativelanguage.googleapis.com"),
             eq(HttpMethod.POST),
             requestCaptor.capture(),
             eq(Map.class)
@@ -124,25 +126,28 @@ class AiServiceTest {
         HttpEntity<Map<String, Object>> request = requestCaptor.getValue();
         Map<String, Object> body = request.getBody();
         assertThat(body).isNotNull();
-        assertThat(body).containsKey("model");
-        assertThat(body).containsKey("messages");
-        assertThat(body).containsKey("temperature");
+        assertThat(body).containsKey("contents");
+        assertThat(body).containsKey("systemInstruction");
+        assertThat(body).containsKey("generationConfig");
+        assertThat(body).containsKey("tools");
+        assertThat(body).containsKey("toolConfig");
 
-        List<Map<String, Object>> messages = (List<Map<String, Object>>) body.get("messages");
-        assertThat(messages).hasSize(4);
-        assertThat(messages.get(0).get("role")).isEqualTo("system");
-        assertThat(messages.get(1).get("role")).isEqualTo("user");
-        assertThat(messages.get(2).get("role")).isEqualTo("assistant");
-        assertThat(messages.get(3).get("role")).isEqualTo("user");
+        List<Map<String, Object>> contents = (List<Map<String, Object>>) body.get("contents");
+        assertThat(contents).hasSize(3);
+        assertThat(contents.get(0).get("role")).isEqualTo("user");
+        assertThat(contents.get(1).get("role")).isEqualTo("model");
+        assertThat(contents.get(2).get("role")).isEqualTo("user");
 
         assertThat(response.reply()).contains("Xin chào");
     }
 
     @Test
-    void openrouterRespond_EmptyHistory_SendsSystemAndUser() {
+    void geminiRespond_EmptyHistory_SendsOnlyUser() {
         Map<String, Object> mockResponse = Map.of(
-            "choices", List.of(Map.of(
-                "message", Map.of("content", "câu trả lời")
+            "candidates", List.of(Map.of(
+                "content", Map.of(
+                    "parts", List.of(Map.of("text", "câu trả lời"))
+                )
             ))
         );
         when(restTemplate.exchange(anyString(), eq(HttpMethod.POST), any(), eq(Map.class)))
@@ -152,10 +157,10 @@ class AiServiceTest {
 
         verify(restTemplate).exchange(anyString(), eq(HttpMethod.POST), requestCaptor.capture(), eq(Map.class));
         Map<String, Object> body = requestCaptor.getValue().getBody();
-        List<Map<String, Object>> messages = (List<Map<String, Object>>) body.get("messages");
-        assertThat(messages).hasSize(2);
-        assertThat(messages.get(0).get("role")).isEqualTo("system");
-        assertThat(messages.get(1).get("role")).isEqualTo("user");
+        List<Map<String, Object>> contents = (List<Map<String, Object>>) body.get("contents");
+        assertThat(contents).hasSize(1);
+        assertThat(contents.get(0).get("role")).isEqualTo("user");
+        assertThat(contents.get(0).get("parts")).asList().isNotEmpty();
     }
 
     @Test
@@ -179,8 +184,8 @@ class AiServiceTest {
     }
 
     @Test
-    void openrouterRespond_EmptyChoices_ReturnsErrorMessage() {
-        Map<String, Object> mockResponse = Map.of("choices", List.of());
+    void geminiRespond_EmptyCandidates_ReturnsErrorMessage() {
+        Map<String, Object> mockResponse = Map.of("candidates", List.of());
         when(restTemplate.exchange(anyString(), eq(HttpMethod.POST), any(), eq(Map.class)))
             .thenReturn(ResponseEntity.ok(mockResponse));
 
@@ -190,10 +195,12 @@ class AiServiceTest {
     }
 
     @Test
-    void openrouterRespond_NullHistory_ReturnsReply() {
+    void geminiRespond_NullHistory_ReturnsReply() {
         Map<String, Object> mockResponse = Map.of(
-            "choices", List.of(Map.of(
-                "message", Map.of("content", "ok")
+            "candidates", List.of(Map.of(
+                "content", Map.of(
+                    "parts", List.of(Map.of("text", "ok"))
+                )
             ))
         );
         when(restTemplate.exchange(anyString(), eq(HttpMethod.POST), any(), eq(Map.class)))

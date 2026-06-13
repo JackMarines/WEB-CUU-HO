@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { Shield, ChevronDown, Bot } from 'lucide-react';
+import { Shield, ChevronDown, Bot, LogOut, Map, LayoutDashboard, User } from 'lucide-react';
 import { callService } from '@/services/callService';
+import { useAuth } from '@/contexts/AuthContext';
 import Reveal from '@/components/common/Reveal';
 
 function VietnamMapPattern() {
@@ -102,6 +103,19 @@ export default function LandingContent() {
   const [scrolled, setScrolled] = useState(false);
   const [activeCalls, setActiveCalls] = useState<number | null>(null);
   const [imgError, setImgError] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const profileRef = useRef<HTMLDivElement>(null);
+  const { user, logout } = useAuth();
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
+        setProfileOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -128,13 +142,57 @@ export default function LandingContent() {
           <Shield size={13} />Cứu Trợ Khẩn Cấp
         </Link>
         <div className="flex items-center gap-3">
-          <Link href="/login" className="text-text-muted text-xs hover:text-text-body transition-colors">
-            Đăng nhập
-          </Link>
-          <Link href="/submit"
-                className="bg-status-high text-surface-bg px-3 py-1.5 rounded-pill text-xs font-semibold hover:opacity-90 transition-all duration-200 hover:-translate-y-0.5">
-            Gửi yêu cầu
-          </Link>
+          {user ? (
+            <div className="relative" ref={profileRef}>
+              <button onClick={() => setProfileOpen(!profileOpen)}
+                      className="flex items-center gap-2 cursor-pointer bg-transparent border-none text-text-body hover:text-text-primary transition-colors">
+                {user.avatarUrl ? (
+                  <img src={user.avatarUrl} alt="" className="w-7 h-7 rounded-full object-cover" />
+                ) : (
+                  <div className="w-7 h-7 rounded-full bg-status-high flex items-center justify-center text-surface-bg text-xs font-semibold">
+                    {user.name.charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <span className="text-xs hidden sm:inline">{user.name}</span>
+              </button>
+              {profileOpen && (
+                <div className="absolute right-0 top-full mt-2 w-48 bg-surface-card border border-border-default rounded-card shadow-xl z-50 py-1.5 backdrop-blur">
+                  <Link href="/map"
+                        onClick={() => setProfileOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-2 text-xs text-text-body hover:text-text-primary hover:bg-surface-medium transition-colors">
+                    <Map size={14} /> Bản đồ
+                  </Link>
+                  {(user.role === 'admin' || user.role === 'superadmin') && (
+                    <Link href="/admin"
+                          onClick={() => setProfileOpen(false)}
+                          className="flex items-center gap-2.5 px-4 py-2 text-xs text-text-body hover:text-text-primary hover:bg-surface-medium transition-colors">
+                      <LayoutDashboard size={14} /> Bảng điều khiển
+                    </Link>
+                  )}
+                  <Link href="/submit"
+                        onClick={() => setProfileOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-2 text-xs text-text-body hover:text-text-primary hover:bg-surface-medium transition-colors">
+                    <User size={14} /> Gửi yêu cầu
+                  </Link>
+                  <hr className="border-border-default my-1" />
+                  <button onClick={() => { setProfileOpen(false); logout(); }}
+                          className="w-full flex items-center gap-2.5 px-4 py-2 text-xs text-text-muted hover:text-status-high hover:bg-surface-medium transition-colors bg-transparent border-none cursor-pointer text-left">
+                    <LogOut size={14} /> Đăng xuất
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <>
+              <Link href="/login" className="text-text-muted text-xs hover:text-text-body transition-colors">
+                Đăng nhập
+              </Link>
+              <Link href="/submit"
+                    className="bg-status-high text-surface-bg px-3 py-1.5 rounded-pill text-xs font-semibold hover:opacity-90 transition-all duration-200 hover:-translate-y-0.5">
+                Gửi yêu cầu
+              </Link>
+            </>
+          )}
         </div>
       </nav>
 
