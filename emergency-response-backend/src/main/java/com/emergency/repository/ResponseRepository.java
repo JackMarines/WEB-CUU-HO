@@ -12,4 +12,5 @@ public interface ResponseRepository extends JpaRepository<Response, Long> {
     List<Response> findByDistressCallIdOrderByCreatedAtDesc(Long distressCallId);
     Optional<Response> findTopByDistressCallIdOrderByCreatedAtDesc(Long distressCallId);
     List<Response> findByRescueCenterId(Long rescueCenterId);
+    void deleteByDistressCallId(Long distressCallId);
 }

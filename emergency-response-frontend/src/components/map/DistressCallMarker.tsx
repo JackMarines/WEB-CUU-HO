@@ -44,8 +44,14 @@ const statusLabels: Record<string, string> = {
 
 export default function DistressCallMarker({ call }: { call: DistressCall }) {
   const color = getUrgencyColor(call);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const markerExtra = { urgencyScore: call.urgencyScore, status: call.status } as any;
   return (
-    <Marker position={[call.lat, call.lng]} icon={createMarkerIcon(color, call.urgencyScore, call.status)}>
+    <Marker
+      position={[call.lat, call.lng]}
+      icon={createMarkerIcon(color, call.urgencyScore, call.status)}
+      {...markerExtra}
+    >
       <Popup>
         <div className="font-sans text-sm min-w-[220px]">
           <div className="flex items-center justify-between mb-1.5">

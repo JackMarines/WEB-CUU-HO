@@ -25,6 +25,23 @@ const typeLabels: Record<string, string> = {
   rescue_team: 'Đội cứu hộ',
 };
 
+const SUPPLY_ITEMS = [
+  { key: 'water', label: 'Nước uống', unit: 'chai' },
+  { key: 'rice', label: 'Gạo', unit: 'kg' },
+  { key: 'noodles', label: 'Mì tôm', unit: 'gói' },
+  { key: 'life_jackets', label: 'Áo phao', unit: 'cái' },
+  { key: 'blankets', label: 'Chăn mền', unit: 'cái' },
+  { key: 'food', label: 'Thực phẩm', unit: 'suất' },
+  { key: 'first_aid_kits', label: 'Bộ sơ cứu', unit: 'bộ' },
+  { key: 'boats', label: 'Thuyền', unit: 'chiếc' },
+  { key: 'mats', label: 'Chiếu', unit: 'cái' },
+] as const;
+
+interface CustomSupply {
+  key: string;
+  value: number;
+}
+
 type FormData = {
   name: string;
   type: string;
@@ -33,12 +50,14 @@ type FormData = {
   address: string;
   phone: string;
   capacity: number | null;
-  supplies: string;
+  supplies: Record<string, number>;
 };
+
+
 
 const emptyForm: FormData = {
   name: '', type: 'shelter', lat: 16, lng: 108, address: '', phone: '',
-  capacity: null, supplies: '',
+  capacity: null, supplies: {},
 };
 
 export default function AdminCentersPage() {
@@ -48,6 +67,7 @@ export default function AdminCentersPage() {
   const [modal, setModal] = useState<{ open: boolean; edit?: RescueCenter }>({ open: false });
   const [deleteTarget, setDeleteTarget] = useState<RescueCenter | null>(null);
   const [form, setForm] = useState<FormData>(emptyForm);
+  const [customSupplies, setCustomSupplies] = useState<CustomSupply[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -113,11 +133,23 @@ export default function AdminCentersPage() {
 
   function openCreate() {
     setForm(emptyForm);
+    setCustomSupplies([]);
     setModal({ open: true });
     setError('');
   }
 
   function openEdit(c: RescueCenter) {
+    const raw = typeof c.supplies === 'object' ? c.supplies : {};
+    const predefined = {} as Record<string, number>;
+    const custom: CustomSupply[] = [];
+    const knownKeys = new Set<string>(SUPPLY_ITEMS.map(s => s.key));
+    for (const [k, v] of Object.entries(raw as Record<string, number>)) {
+      if (knownKeys.has(k)) {
+        predefined[k] = v;
+      } else {
+        custom.push({ key: k, value: v });
+      }
+    }
     setForm({
       name: c.name,
       type: c.type,
@@ -126,8 +158,9 @@ export default function AdminCentersPage() {
       address: c.address,
       phone: c.phone,
       capacity: c.capacity,
-      supplies: typeof c.supplies === 'object' ? JSON.stringify(c.supplies, null, 2) : '',
+      supplies: predefined,
     });
+    setCustomSupplies(custom);
     setModal({ open: true, edit: c });
     setError('');
   }
@@ -193,9 +226,16 @@ export default function AdminCentersPage() {
     try {
       setSaving(true);
       setError('');
+      const merged: Record<string, number> = {};
+      for (const [k, v] of Object.entries(form.supplies)) {
+        if (v > 0) merged[k] = v;
+      }
+      for (const c of customSupplies) {
+        if (c.key.trim() && c.value > 0) merged[c.key.trim()] = c.value;
+      }
       const data = {
         ...form,
-        supplies: form.supplies || null,
+        supplies: Object.keys(merged).length > 0 ? JSON.stringify(merged) : null,
       };
       if (modal.edit) {
         await centerService.update(modal.edit.id, data);
@@ -423,10 +463,80 @@ export default function AdminCentersPage() {
                 </div>
               </div>
               <div>
-                <label className="block text-xs text-text-muted mb-1">Vật tư (JSON)</label>
-                <textarea value={form.supplies} onChange={e => setForm(f => ({ ...f, supplies: e.target.value }))} rows={3}
-                  className="w-full px-3 py-2 rounded-pill bg-surface-card border border-border-default text-text-body text-sm placeholder-text-muted focus:outline-none focus:border-primary transition-colors resize-none font-mono"
-                  placeholder='{"rice": 100, "water": 200}' />
+                <label className="block text-xs text-text-muted mb-2">Vật tư</label>
+                <div className="space-y-2.5 max-h-64 overflow-y-auto pr-1">
+                  {SUPPLY_ITEMS.map(item => (
+                    <label key={item.key} className="flex items-center justify-between gap-3 text-sm text-text-body">
+                      <span>{item.label}</span>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <input
+                          type="number" min="0"
+                          value={form.supplies[item.key] ?? ''}
+                          onChange={e => {
+                            const val = e.target.value ? parseInt(e.target.value) : 0;
+                            setForm(f => ({ ...f, supplies: { ...f.supplies, [item.key]: val } }));
+                          }}
+                          className="w-20 px-2 py-1.5 rounded-pill bg-surface-card border border-border-default text-text-body text-sm text-center focus:outline-none focus:border-primary transition-colors"
+                        />
+                        <span className="text-text-muted text-xs w-8">{item.unit}</span>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className="border-t border-border-default pt-3">
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-xs text-text-muted">Vật phẩm khác</label>
+                  <button
+                    type="button"
+                    onClick={() => setCustomSupplies(prev => [...prev, { key: '', value: 0 }])}
+                    className="text-xs text-status-high hover:opacity-80 transition-opacity cursor-pointer"
+                  >
+                    + Thêm
+                  </button>
+                </div>
+                {customSupplies.length === 0 ? (
+                  <p className="text-text-muted text-xs italic">Chưa có vật phẩm khác</p>
+                ) : (
+                  <div className="space-y-2">
+                    {customSupplies.map((cs, i) => (
+                      <div key={i} className="flex items-center justify-between gap-3">
+                        <input
+                          type="text"
+                          value={cs.key}
+                          onChange={e => {
+                            const next = [...customSupplies];
+                            next[i] = { ...next[i], key: e.target.value };
+                            setCustomSupplies(next);
+                          }}
+                          placeholder="Tên vật phẩm"
+                          className="flex-1 min-w-0 px-2 py-1.5 rounded-pill bg-surface-card border border-border-default text-text-body text-sm placeholder-text-muted focus:outline-none focus:border-primary transition-colors"
+                        />
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <input
+                            type="number" min="0"
+                            value={cs.value || ''}
+                            onChange={e => {
+                              const next = [...customSupplies];
+                              next[i] = { ...next[i], value: parseInt(e.target.value) || 0 };
+                              setCustomSupplies(next);
+                            }}
+                            className="w-20 px-2 py-1.5 rounded-pill bg-surface-card border border-border-default text-text-body text-sm text-center focus:outline-none focus:border-primary transition-colors"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setCustomSupplies(prev => prev.filter((_, j) => j !== i))}
+                            className="text-text-muted hover:text-status-high transition-colors cursor-pointer text-sm shrink-0"
+                            title="Xóa"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
               <div className="flex justify-end gap-3 pt-2">
                 <button type="button" onClick={() => setModal({ open: false })}

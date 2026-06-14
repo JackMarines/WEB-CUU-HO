@@ -22,4 +22,6 @@ export const callService = {
     api.post(`/calls/${callId}/feedback`, { rating, feedback }).then(r => r.data),
   getStats: () =>
     api.get<DashboardStats>('/calls/stats').then(r => r.data),
+  deleteCall: (id: number) =>
+    api.delete(`/calls/${id}`),
 };

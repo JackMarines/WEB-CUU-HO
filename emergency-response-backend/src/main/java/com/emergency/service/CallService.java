@@ -67,11 +67,12 @@ public class CallService {
         DisasterType dt = disasterTypeRepository.findById(request.disasterTypeId())
             .orElseThrow(() -> new ResourceNotFoundException("Disaster type not found"));
 
-        User user = userRepository.findById(userId)
-            .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-
         DistressCall call = new DistressCall();
-        call.setUser(user);
+        if (userId != null) {
+            User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+            call.setUser(user);
+        }
         call.setDisasterType(dt);
         call.setLat(request.lat());
         call.setLng(request.lng());
@@ -129,9 +130,11 @@ public class CallService {
 
     @Transactional
     public void deleteCall(Long id) {
-        DistressCall call = distressCallRepository.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Distress call not found"));
-        distressCallRepository.delete(call);
+        if (!distressCallRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Distress call not found");
+        }
+        responseRepository.deleteByDistressCallId(id);
+        distressCallRepository.deleteById(id);
     }
 
     public Map<String, Object> getDashboardStats() {

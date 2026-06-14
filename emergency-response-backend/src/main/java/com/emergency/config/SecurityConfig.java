@@ -51,6 +51,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/calls/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/calls/**").permitAll()
                 .requestMatchers(HttpMethod.PUT, "/api/calls/**").hasAnyRole("admin", "superadmin")
+                .requestMatchers(HttpMethod.DELETE, "/api/calls/**").hasAnyRole("admin", "superadmin")
                 .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/disaster-types/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/disaster-types/**").hasAnyRole("admin", "superadmin")

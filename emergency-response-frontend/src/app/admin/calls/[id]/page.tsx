@@ -26,6 +26,8 @@ export default function CallDetailPage() {
   const [selectedCenter, setSelectedCenter] = useState('');
   const [assignNote, setAssignNote] = useState('');
   const [saving, setSaving] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -65,6 +67,20 @@ export default function CallDetailPage() {
       setCall(updated);
     } catch (err: any) {
       setError(err.response?.data?.error || 'Cập nhật trạng thái thất bại');
+    }
+  }
+
+  async function handleDelete() {
+    if (!call) return;
+    try {
+      setDeleting(true);
+      setError('');
+      await callService.deleteCall(call.id);
+      router.push('/admin/calls');
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Xóa thất bại');
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -221,6 +237,12 @@ export default function CallDetailPage() {
                 >
                   Hủy bỏ
                 </button>
+                <button
+                  onClick={() => setDeleteConfirm(true)}
+                  className="px-4 py-2 rounded-pill bg-status-high/10 text-status-high text-sm font-medium border border-status-high/30 hover:opacity-90 transition-opacity cursor-pointer ml-auto"
+                >
+                  Xóa cuộc gọi
+                </button>
               </div>
             </div>
           )}
@@ -315,6 +337,32 @@ export default function CallDetailPage() {
           </div>
         </div>
       </div>
+      {deleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+          <div className="bg-surface-elevated rounded-section p-6 w-full max-w-sm border border-border-default">
+            <h2 className="text-lg font-bold text-text-primary mb-2">Xóa cuộc gọi</h2>
+            <p className="text-text-muted text-sm mb-1">Bạn có chắc muốn xóa cuộc gọi</p>
+            <p className="text-text-body font-medium mb-1">&ldquo;Call #{call.id}&rdquo;?</p>
+            <p className="text-status-high text-xs mb-4">Hành động này không thể hoàn tác.</p>
+            {error && <p className="text-status-high text-sm mb-3">{error}</p>}
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => { setDeleteConfirm(false); setError(''); }}
+                className="px-4 py-2 rounded-pill border border-border-default text-text-muted text-sm hover:bg-surface-card transition-colors cursor-pointer"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="px-4 py-2 rounded-pill bg-status-high text-white text-sm font-medium hover:opacity-90 disabled:opacity-50 transition-opacity cursor-pointer"
+              >
+                {deleting ? 'Đang xóa...' : 'Xóa'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

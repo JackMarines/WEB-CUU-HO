@@ -77,7 +77,6 @@ export default function DisasterTypesPage() {
       await fetch();
     } catch (err: any) {
       setError(err.response?.data?.error || 'Xóa thất bại');
-      setDeleteTarget(null);
     }
   }
 

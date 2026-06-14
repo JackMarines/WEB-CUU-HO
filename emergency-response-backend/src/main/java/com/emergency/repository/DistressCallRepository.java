@@ -25,6 +25,7 @@ public interface DistressCallRepository extends JpaRepository<DistressCall, Long
                                      @Param("dateTo") java.time.LocalDateTime dateTo);
 
     long countByStatus(DistressCall.CallStatus status);
+    long countByDisasterTypeId(Long disasterTypeId);
 
     @Query("SELECT d.disasterType.slug, COUNT(d) FROM DistressCall d GROUP BY d.disasterType.slug")
     List<Object[]> countByDisasterType();

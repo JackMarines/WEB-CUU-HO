@@ -5,6 +5,7 @@ import com.emergency.dto.response.DisasterTypeResponse;
 import com.emergency.exception.ResourceNotFoundException;
 import com.emergency.model.DisasterType;
 import com.emergency.repository.DisasterTypeRepository;
+import com.emergency.repository.DistressCallRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -15,6 +16,9 @@ public class DisasterTypeService {
 
     @Autowired
     private DisasterTypeRepository disasterTypeRepository;
+
+    @Autowired
+    private DistressCallRepository distressCallRepository;
 
     public List<DisasterTypeResponse> getAll() {
         return disasterTypeRepository.findAllByOrderByNameAsc().stream()
@@ -61,6 +65,12 @@ public class DisasterTypeService {
     public void delete(Long id) {
         if (!disasterTypeRepository.existsById(id)) {
             throw new ResourceNotFoundException("Disaster type not found");
+        }
+        long callCount = distressCallRepository.countByDisasterTypeId(id);
+        if (callCount > 0) {
+            throw new IllegalStateException(
+                "Không thể xóa: có " + callCount + " cuộc gọi khẩn cấp đang sử dụng loại thiên tai này"
+            );
         }
         disasterTypeRepository.deleteById(id);
     }

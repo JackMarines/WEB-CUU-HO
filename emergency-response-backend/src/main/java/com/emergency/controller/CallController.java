@@ -52,7 +52,10 @@ public class CallController {
     @PostMapping
     public ResponseEntity<DistressCallResponse> create(@Valid @RequestBody DistressCallRequest request) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        Long userId = (Long) auth.getPrincipal();
+        Long userId = null;
+        if (auth != null && auth.getPrincipal() instanceof Long) {
+            userId = (Long) auth.getPrincipal();
+        }
         return ResponseEntity.ok(callService.create(request, userId));
     }
 

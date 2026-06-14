@@ -29,7 +29,7 @@ public class AiService {
 
     private static final Logger log = LoggerFactory.getLogger(AiService.class);
 
-    private static final String GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models/";
+    private static final String OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1/chat/completions";
 
     private static final String SYSTEM_PROMPT =
         "Bạn là trợ lý AI của hệ thống Cứu Trợ Khẩn Cấp — nền tảng điều phối cứu hộ thiên tai tại Việt Nam. " +
@@ -210,23 +210,23 @@ public class AiService {
     }
 
     private final RestTemplate restTemplate;
-    private final String apiKey;
-    private final String model;
+    private final String openRouterApiKey;
+    private final String openRouterModel;
     private final DistressCallRepository callRepository;
     private final DisasterTypeRepository disasterTypeRepository;
     private final RescueCenterRepository centerRepository;
     private final ObjectMapper objectMapper;
 
     public AiService(RestTemplate restTemplate,
-                     @Value("${gemini.api-key:}") String apiKey,
-                     @Value("${gemini.model:gemini-2.0-flash}") String model,
+                     @Value("${openrouter.api-key:}") String openRouterApiKey,
+                     @Value("${openrouter.model:openrouter/free}") String openRouterModel,
                      DistressCallRepository callRepository,
                      DisasterTypeRepository disasterTypeRepository,
                      RescueCenterRepository centerRepository,
                      ObjectMapper objectMapper) {
         this.restTemplate = restTemplate;
-        this.apiKey = apiKey;
-        this.model = model;
+        this.openRouterApiKey = openRouterApiKey;
+        this.openRouterModel = openRouterModel;
         this.callRepository = callRepository;
         this.disasterTypeRepository = disasterTypeRepository;
         this.centerRepository = centerRepository;
@@ -234,202 +234,236 @@ public class AiService {
     }
 
     public ChatResponse respond(String message, Integer callId, List<ChatMessage> history) {
-        if (apiKey == null || apiKey.isBlank()) {
+        if (openRouterApiKey == null || openRouterApiKey.isBlank()) {
             return ruleBasedRespond(message, callId);
         }
         try {
-            return geminiRespond(message, history, SYSTEM_PROMPT, getToolDefinitions());
+            return openRouterRespond(message, history, SYSTEM_PROMPT, getToolDefinitions());
         } catch (RestClientException e) {
-            log.warn("Gemini API call failed ({}), falling back to rule-based", e.getMessage());
+            log.warn("OpenRouter API call failed ({}), falling back to rule-based", e.getMessage());
             return ruleBasedRespond(message, callId);
         }
     }
 
     public ChatResponse respondPublic(String message, List<ChatMessage> history) {
-        if (apiKey == null || apiKey.isBlank()) {
+        if (openRouterApiKey == null || openRouterApiKey.isBlank()) {
             return ruleBasedRespondPublic(message);
         }
         try {
-            return geminiRespond(message, history, PUBLIC_SYSTEM_PROMPT, getPublicToolDefinitions());
+            return openRouterRespond(message, history, PUBLIC_SYSTEM_PROMPT, getPublicToolDefinitions());
         } catch (RestClientException e) {
-            log.warn("Gemini API call failed ({}), falling back to rule-based", e.getMessage());
+            log.warn("OpenRouter API call failed ({}), falling back to rule-based", e.getMessage());
             return ruleBasedRespondPublic(message);
         }
     }
 
     @SuppressWarnings("unchecked")
-    private ChatResponse geminiRespond(String message, List<ChatMessage> history,
-                                        String systemPrompt, List<Map<String, Object>> tools) {
+    private ChatResponse openRouterRespond(String message, List<ChatMessage> history,
+                                            String systemPrompt, List<Map<String, Object>> functionDeclarations) {
         try {
-            String url = GEMINI_BASE_URL + model + ":generateContent?key=" + apiKey;
-
-            List<Map<String, Object>> contents = new ArrayList<>();
+            List<Map<String, Object>> messages = new ArrayList<>();
+            messages.add(Map.of("role", "system", "content", systemPrompt));
 
             if (history != null) {
                 for (ChatMessage msg : history) {
-                    String role = "user".equals(msg.role()) ? "user" : "model";
-                    contents.add(Map.of("role", role, "parts", List.of(Map.of("text", msg.content()))));
+                    String role = "user".equals(msg.role()) ? "user" : "assistant";
+                    messages.add(Map.of("role", role, "content", msg.content()));
                 }
             }
-            contents.add(Map.of("role", "user", "parts", List.of(Map.of("text", message))));
+            messages.add(Map.of("role", "user", "content", message));
+
+            List<Map<String, Object>> tools = new ArrayList<>();
+            for (Map<String, Object> decl : functionDeclarations) {
+                Map<String, Object> tool = new HashMap<>();
+                tool.put("type", "function");
+                tool.put("function", decl);
+                tools.add(tool);
+            }
 
             Map<String, Object> requestBody = new HashMap<>();
-            requestBody.put("contents", contents);
-            requestBody.put("systemInstruction", Map.of("parts", List.of(Map.of("text", systemPrompt))));
-            requestBody.put("tools", List.of(Map.of("functionDeclarations", tools)));
-            requestBody.put("toolConfig", Map.of("functionCallingConfig", Map.of("mode", "AUTO")));
-
-            Map<String, Object> generationConfig = new HashMap<>();
-            generationConfig.put("temperature", 0.7);
-            generationConfig.put("maxOutputTokens", 1000);
-            requestBody.put("generationConfig", generationConfig);
+            requestBody.put("model", openRouterModel);
+            requestBody.put("messages", messages);
+            requestBody.put("tools", tools);
+            requestBody.put("tool_choice", "auto");
+            requestBody.put("temperature", 0.7);
+            requestBody.put("max_tokens", 1000);
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.setBearerAuth(openRouterApiKey);
+            headers.add("HTTP-Referer", "http://localhost:3000");
+            headers.add("X-Title", "Emergency Response System");
 
             ResponseEntity<Map> response = restTemplate.exchange(
-                url, HttpMethod.POST, new HttpEntity<>(requestBody, headers), Map.class);
+                OPENROUTER_BASE_URL, HttpMethod.POST, new HttpEntity<>(requestBody, headers), Map.class);
 
             if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
                 return errorResponse("Xin lỗi, đã xảy ra lỗi khi kết nối đến dịch vụ AI.");
             }
 
-            Map<String, Object> functionCall = extractFunctionCall(response.getBody());
-            if (functionCall != null) {
-                return handleGeminiFunctionCall(functionCall, message, history, systemPrompt, tools);
+            List<Map<String, Object>> toolCalls = extractToolCalls(response.getBody());
+            if (toolCalls != null && !toolCalls.isEmpty()) {
+                return handleOpenRouterFunctionCall(toolCalls, message, history, systemPrompt, functionDeclarations);
             }
 
-            String reply = extractGeminiText(response.getBody());
+            String reply = extractOpenRouterText(response.getBody());
             if (reply == null || reply.isBlank()) {
                 return errorResponse("Xin lỗi, tôi không thể tạo câu trả lời lúc này.");
             }
             return new ChatResponse(reply, List.of(), null);
 
         } catch (RestClientException e) {
-            log.error("Gemini API call failed: {}", e.getMessage());
+            log.error("OpenRouter API call failed: {}", e.getMessage());
             throw e;
         } catch (Exception e) {
-            log.error("Gemini unexpected error", e);
+            log.error("OpenRouter unexpected error", e);
             return errorResponse("Xin lỗi, đã xảy ra lỗi xử lý.");
         }
     }
 
     @SuppressWarnings("unchecked")
-    private ChatResponse handleGeminiFunctionCall(Map<String, Object> functionCall,
-                                                   String originalMessage,
-                                                   List<ChatMessage> history,
-                                                   String systemPrompt,
-                                                   List<Map<String, Object>> tools) {
+    private ChatResponse handleOpenRouterFunctionCall(List<Map<String, Object>> toolCalls,
+                                                       String originalMessage,
+                                                       List<ChatMessage> history,
+                                                       String systemPrompt,
+                                                       List<Map<String, Object>> functionDeclarations) {
         try {
-            String toolName = (String) functionCall.get("name");
-            Map<String, Object> args = (Map<String, Object>) functionCall.get("args");
-
-            if (toolName == null || args == null) {
-                return errorResponse("Xin lỗi, tôi không thể xử lý yêu cầu này.");
-            }
-
-            Object result = executeTool(toolName, args);
-            String content = objectMapper.writeValueAsString(result);
-
-            List<Map<String, Object>> contents = new ArrayList<>();
+            List<Map<String, Object>> messages = new ArrayList<>();
+            messages.add(Map.of("role", "system", "content", systemPrompt));
 
             if (history != null) {
                 for (ChatMessage msg : history) {
-                    String role = "user".equals(msg.role()) ? "user" : "model";
-                    contents.add(Map.of("role", role, "parts", List.of(Map.of("text", msg.content()))));
+                    String role = "user".equals(msg.role()) ? "user" : "assistant";
+                    messages.add(Map.of("role", role, "content", msg.content()));
                 }
             }
-            contents.add(Map.of("role", "user", "parts", List.of(Map.of("text", originalMessage))));
-            contents.add(Map.of("role", "model", "parts", List.of(Map.of("functionCall", functionCall))));
-            contents.add(Map.of("role", "function", "parts", List.of(Map.of("functionResponse", Map.of(
-                "name", toolName,
-                "response", Map.of("result", content)
-            )))));
+            messages.add(Map.of("role", "user", "content", originalMessage));
 
-            String url = GEMINI_BASE_URL + model + ":generateContent?key=" + apiKey;
+            Map<String, Object> assistantMsg = new HashMap<>();
+            assistantMsg.put("role", "assistant");
+            assistantMsg.put("content", null);
+
+            List<Map<String, Object>> openAiCalls = new ArrayList<>();
+            for (Map<String, Object> tc : toolCalls) {
+                Map<String, Object> fn = new HashMap<>();
+                fn.put("name", tc.get("name"));
+                fn.put("arguments", tc.get("arguments"));
+
+                Map<String, Object> call = new HashMap<>();
+                call.put("id", tc.get("id"));
+                call.put("type", "function");
+                call.put("function", fn);
+                openAiCalls.add(call);
+            }
+            assistantMsg.put("tool_calls", openAiCalls);
+            messages.add(assistantMsg);
+
+            for (Map<String, Object> tc : toolCalls) {
+                String toolName = (String) tc.get("name");
+                String argsJson = (String) tc.get("arguments");
+
+                Map<String, Object> args;
+                try {
+                    args = objectMapper.readValue(argsJson, Map.class);
+                } catch (Exception e) {
+                    args = new HashMap<>();
+                }
+
+                Object result = executeTool(toolName, args);
+                String content = objectMapper.writeValueAsString(result);
+
+                messages.add(Map.of(
+                    "role", "tool",
+                    "tool_call_id", tc.get("id"),
+                    "content", content
+                ));
+            }
+
+            List<Map<String, Object>> tools = new ArrayList<>();
+            for (Map<String, Object> decl : functionDeclarations) {
+                Map<String, Object> tool = new HashMap<>();
+                tool.put("type", "function");
+                tool.put("function", decl);
+                tools.add(tool);
+            }
 
             Map<String, Object> followUpBody = new HashMap<>();
-            followUpBody.put("contents", contents);
-            followUpBody.put("systemInstruction", Map.of("parts", List.of(Map.of("text", systemPrompt))));
-            followUpBody.put("tools", List.of(Map.of("functionDeclarations", tools)));
-            followUpBody.put("toolConfig", Map.of("functionCallingConfig", Map.of("mode", "AUTO")));
-
-            Map<String, Object> generationConfig = new HashMap<>();
-            generationConfig.put("temperature", 0.7);
-            generationConfig.put("maxOutputTokens", 1000);
-            followUpBody.put("generationConfig", generationConfig);
+            followUpBody.put("model", openRouterModel);
+            followUpBody.put("messages", messages);
+            followUpBody.put("tools", tools);
+            followUpBody.put("tool_choice", "auto");
+            followUpBody.put("temperature", 0.7);
+            followUpBody.put("max_tokens", 1000);
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.setBearerAuth(openRouterApiKey);
+            headers.add("HTTP-Referer", "http://localhost:3000");
+            headers.add("X-Title", "Emergency Response System");
 
             ResponseEntity<Map> followUpResponse = restTemplate.exchange(
-                url, HttpMethod.POST, new HttpEntity<>(followUpBody, headers), Map.class);
+                OPENROUTER_BASE_URL, HttpMethod.POST, new HttpEntity<>(followUpBody, headers), Map.class);
 
-            Map<String, Object> nestedCall = extractFunctionCall(followUpResponse.getBody());
-            if (nestedCall != null) {
-                return handleGeminiFunctionCall(nestedCall, originalMessage, history, systemPrompt, tools);
+            List<Map<String, Object>> nestedCalls = extractToolCalls(followUpResponse.getBody());
+            if (nestedCalls != null && !nestedCalls.isEmpty()) {
+                return handleOpenRouterFunctionCall(nestedCalls, originalMessage, history, systemPrompt, functionDeclarations);
             }
 
-            String reply = extractGeminiText(followUpResponse.getBody());
+            String reply = extractOpenRouterText(followUpResponse.getBody());
             if (reply == null || reply.isBlank()) {
                 return errorResponse("Xin lỗi, tôi không thể xử lý yêu cầu này.");
             }
             return new ChatResponse(reply, List.of(), null);
 
+        } catch (RestClientException e) {
+            throw e;
         } catch (Exception e) {
-            log.error("Failed to handle Gemini function call", e);
+            log.error("Failed to handle OpenRouter function call", e);
             return errorResponse("Xin lỗi, đã xảy ra lỗi khi xử lý dữ liệu.");
         }
     }
 
     @SuppressWarnings("unchecked")
-    private String extractGeminiText(Map<String, Object> body) {
+    private String extractOpenRouterText(Map<String, Object> body) {
         try {
-            List<Map<String, Object>> candidates = (List<Map<String, Object>>) body.get("candidates");
-            if (candidates == null || candidates.isEmpty()) {
-                Map<String, Object> promptFeedback = (Map<String, Object>) body.get("promptFeedback");
-                if (promptFeedback != null) {
-                    log.warn("Gemini prompt blocked: {}", promptFeedback);
-                }
+            List<Map<String, Object>> choices = (List<Map<String, Object>>) body.get("choices");
+            if (choices == null || choices.isEmpty()) {
+                log.warn("OpenRouter: no choices in response");
                 return null;
             }
-            Map<String, Object> first = candidates.get(0);
-            Map<String, Object> content = (Map<String, Object>) first.get("content");
-            if (content == null) return null;
-            List<Map<String, Object>> parts = (List<Map<String, Object>>) content.get("parts");
-            if (parts == null || parts.isEmpty()) return null;
-
-            StringBuilder text = new StringBuilder();
-            for (Map<String, Object> part : parts) {
-                if (part.containsKey("text")) {
-                    text.append(part.get("text"));
-                }
-            }
-            return text.length() > 0 ? text.toString() : null;
+            Map<String, Object> message = (Map<String, Object>) choices.get(0).get("message");
+            if (message == null) return null;
+            String content = (String) message.get("content");
+            return content != null && !content.isBlank() ? content : null;
         } catch (Exception e) {
-            log.warn("Failed to extract Gemini text", e);
+            log.warn("Failed to extract OpenRouter text", e);
             return null;
         }
     }
 
     @SuppressWarnings("unchecked")
-    private Map<String, Object> extractFunctionCall(Map<String, Object> body) {
+    private List<Map<String, Object>> extractToolCalls(Map<String, Object> body) {
         try {
-            List<Map<String, Object>> candidates = (List<Map<String, Object>>) body.get("candidates");
-            if (candidates == null || candidates.isEmpty()) return null;
-            Map<String, Object> first = candidates.get(0);
-            Map<String, Object> content = (Map<String, Object>) first.get("content");
-            if (content == null) return null;
-            List<Map<String, Object>> parts = (List<Map<String, Object>>) content.get("parts");
-            if (parts == null || parts.isEmpty()) return null;
-            for (Map<String, Object> part : parts) {
-                if (part.containsKey("functionCall")) {
-                    return (Map<String, Object>) part.get("functionCall");
-                }
+            List<Map<String, Object>> choices = (List<Map<String, Object>>) body.get("choices");
+            if (choices == null || choices.isEmpty()) return null;
+            Map<String, Object> message = (Map<String, Object>) choices.get(0).get("message");
+            if (message == null) return null;
+            List<Map<String, Object>> toolCalls = (List<Map<String, Object>>) message.get("tool_calls");
+            if (toolCalls == null || toolCalls.isEmpty()) return null;
+
+            List<Map<String, Object>> result = new ArrayList<>();
+            for (Map<String, Object> tc : toolCalls) {
+                Map<String, Object> function = (Map<String, Object>) tc.get("function");
+                if (function == null) continue;
+                Map<String, Object> simplified = new HashMap<>();
+                simplified.put("id", tc.get("id"));
+                simplified.put("name", function.get("name"));
+                simplified.put("arguments", function.get("arguments"));
+                result.add(simplified);
             }
-            return null;
+            return result.isEmpty() ? null : result;
         } catch (Exception e) {
-            log.warn("Failed to extract function call", e);
+            log.warn("Failed to extract tool calls", e);
             return null;
         }
     }
